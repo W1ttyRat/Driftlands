@@ -1,15 +1,18 @@
 extends CharacterBody2D
 
 const SPEED := 70.0
-const REACH := 12.0   # sword hit box centre, px from the chest
-const SWING_TIME := 0.2
+const CHEST := Vector2(0, -8)
+const REACH := 12.0   # hit box centre, px from the chest
 const DIRS := {"right": Vector2.RIGHT, "left": Vector2.LEFT, "down": Vector2.DOWN, "up": Vector2.UP}
+const SPRITE_OFFSET := Vector2(-8, -17)
+# The attack strips use other frame sizes; these shift them so the head stays over the idle head.
+const ATTACK_SHIFT := {"down": Vector2(0, 0), "left": Vector2(-3, 0), "right": Vector2(3, 0), "up": Vector2(-7, -4)}
 
 var facing := "down"
 var swinging := false
 var want_attack := false
+var hovered: Array = []
 @onready var sprite: AnimatedSprite2D = $Sprite
-@onready var sword: Node2D = $Sword
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack"):
@@ -19,9 +22,11 @@ func _physics_process(_delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = dir * SPEED
 	move_and_slide()
-	if dir != Vector2.ZERO and not swinging:
-		facing = _snap(dir)
-	sprite.play(("walk_" if dir != Vector2.ZERO else "idle_") + facing)
+	if not swinging:
+		if dir != Vector2.ZERO:
+			facing = _snap(dir)
+		sprite.play(("walk_" if dir != Vector2.ZERO else "idle_") + facing)
+	_update_hover()
 	if want_attack and not swinging:
 		_swing()
 	want_attack = false
@@ -31,23 +36,39 @@ func _snap(v: Vector2) -> String:
 		return "right" if v.x > 0 else "left"
 	return "down" if v.y > 0 else "up"
 
-func _swing() -> void:
-	swinging = true
-	facing = _snap(get_global_mouse_position() - (global_position + $Sword.position))
-	var dir: Vector2 = DIRS[facing]
+func _aim() -> String:
+	return _snap(get_global_mouse_position() - (global_position + CHEST))
+
+# Everything a swing in this direction would hit.
+func _targets(face: String) -> Array:
 	var q := PhysicsShapeQueryParameters2D.new()
 	var box := RectangleShape2D.new()
 	box.size = Vector2(16, 16)
 	q.shape = box
-	q.transform = Transform2D(0.0, sword.global_position + dir * REACH)
+	q.transform = Transform2D(0.0, global_position + CHEST + DIRS[face] * REACH)
 	q.exclude = [get_rid()]
+	var out := []
 	for hit in get_world_2d().direct_space_state.intersect_shape(q):
 		if hit.collider.has_method("take_hit"):
-			hit.collider.take_hit(1)
-	sword.rotation = dir.angle() + PI / 2 - 1.0
-	sword.show()
-	var t := create_tween()
-	t.tween_property(sword, "rotation", dir.angle() + PI / 2 + 1.0, SWING_TIME)
-	await t.finished
-	sword.hide()
+			out.append(hit.collider)
+	return out
+
+func _update_hover() -> void:
+	var now := _targets(_aim())
+	for t in hovered:
+		if is_instance_valid(t) and not t in now:
+			t.set_hover(false)
+	for t in now:
+		t.set_hover(true)
+	hovered = now
+
+func _swing() -> void:
+	swinging = true
+	facing = _aim()
+	for t in _targets(facing):
+		t.take_hit(1)
+	sprite.offset = SPRITE_OFFSET + ATTACK_SHIFT[facing]
+	sprite.play("atk_" + facing)
+	await sprite.animation_finished
+	sprite.offset = SPRITE_OFFSET
 	swinging = false

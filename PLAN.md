@@ -99,7 +99,8 @@ Inventory, crafting, machines, more islands, skills, respawn, player health, ske
 ## Outcome (all phases built and verified)
 Deviations from the plan, and why:
 - **Island = dual-grid.** The tileset sheet is a half-cell-offset ("dual grid") set. `scripts/world.gd` (@tool) fills the `Ground` layer from the land cells you paint in `Data` (use any tile, e.g. atlas 2,0). Water collision comes from per-quad polygons in `tileset.tres`. Limit: no tiles for diagonal-only corners (1001, 0110), keep outlines free of them.
-- **Attack = sword sprite swing, not the pack's attack strips.** The strips have different frame sizes and body offsets per direction (down 23x23, left/right 16x21, up 23x18), so aligning them is fiddly. A `Sword.png` pivot swings toward the snapped aim direction instead. Hit test is `intersect_shape`.
+- **Attack = the pack's attack strips.** Frame sizes differ per direction (down 23x23, left/right 16x21, up 23x18), so `scripts/player.gd` shifts the sprite by a fixed `ATTACK_SHIFT` per direction to keep the head over the idle head (measured from the hair-pixel centroid). Hit test is `intersect_shape` at swing start.
+- **Hover highlight (Forager-style).** Each physics frame the player runs the same box query a swing toward the cursor would use, and the hit objects get the white-rim shader `shaders/outline.gdshader` via `set_hover()`. So the highlight always matches what a click would hit.
 - **Texture filter:** `default_texture_filter` value 0 is Nearest (the doc fetch implied 1; 1 is Linear).
 - **Scene tiles** (verified in engine): instances are children of the `Objects` layer, origin at the cell centre, they Y-sort with the player, and `erase_cell` frees them.
 - Skeleton is a static dummy (`StaticBody2D`), not placed as a tile.
