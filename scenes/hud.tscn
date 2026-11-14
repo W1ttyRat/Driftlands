@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_ahhtf"]
+
+[node name="HUD" type="CanvasLayer" unique_id=1113730169]
+script = ExtResource("1_ahhtf")
+
+[node name="Label" type="Label" parent="." unique_id=1758541386]
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 12.0
+offset_bottom = 8.0
+theme_override_font_sizes/font_size = 24

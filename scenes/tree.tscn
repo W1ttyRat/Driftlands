@@ -1,0 +1,20 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/hittable.gd" id="1_vplca"]
+[ext_resource type="Texture2D" path="res://Tiny Adventure Pack Plus/Other/Misc/Tree/Tree.png" id="2_viusy"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_qd6xs"]
+radius = 5.0
+
+[node name="Tree" type="StaticBody2D" unique_id=1040588364]
+script = ExtResource("1_vplca")
+drop = "wood"
+
+[node name="@Sprite2D@2" type="Sprite2D" parent="." unique_id=164860664]
+position = Vector2(-24, -54)
+texture = ExtResource("2_viusy")
+centered = false
+
+[node name="@CollisionShape2D@3" type="CollisionShape2D" parent="." unique_id=745915347]
+position = Vector2(0, -5)
+shape = SubResource("CircleShape2D_qd6xs")
