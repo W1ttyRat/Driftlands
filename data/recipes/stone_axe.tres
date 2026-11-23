@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Recipe" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_0xt47"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="2_51jor"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="3_htliq"]
+[ext_resource type="Resource" path="res://data/items/stone_axe.tres" id="4_v6h6s"]
+[ext_resource type="Script" path="res://scripts/items/recipe.gd" id="5_ycqhf"]
+
+[resource]
+script = ExtResource("5_ycqhf")
+output = ExtResource("4_v6h6s")
+inputs = Dictionary[ExtResource("1_0xt47"), int]({
+ExtResource("2_51jor"): 3,
+ExtResource("3_htliq"): 2
+})
