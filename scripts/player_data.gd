@@ -5,6 +5,8 @@ extends Node
 signal selected_changed
 signal gained(item: ItemData, amount: int)
 signal inventory_full(item: ItemData)
+## A building with a menu (the furnace) was clicked; the HUD opens its screen.
+signal machine_opened(machine: Node)
 
 const HOTBAR := 8
 const BAG := 24
@@ -23,10 +25,10 @@ func bag_slots() -> Array:
 func is_hotbar(i: int) -> bool:
 	return i < HOTBAR
 
-## New tools go to the hotbar first so they are ready to use; everything else goes to the bag first,
-## so wood and stone do not push into the slots you set up.
+## New tools and buildings go to the hotbar first so they are ready to use; resources go to the
+## bag first, so wood and stone do not push into the slots you set up.
 func fill_order(item: ItemData) -> Array:
-	if item.kind == ItemData.Kind.TOOL:
+	if item.kind != ItemData.Kind.RESOURCE:
 		return hotbar_slots() + bag_slots()
 	return bag_slots() + hotbar_slots()
 
@@ -54,6 +56,9 @@ func quick_move(i: int) -> void:
 
 func split(i: int) -> void:
 	inventory.split(i, bag_slots() + hotbar_slots())
+
+func open_machine(machine: Node) -> void:
+	machine_opened.emit(machine)
 
 func sort_bag() -> void:
 	inventory.sort_range(HOTBAR, HOTBAR + BAG)

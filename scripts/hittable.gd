@@ -6,15 +6,8 @@ extends StaticBody2D
 ## A held tool with this tool_type does its full power here: "axe", "pickaxe" or "sword".
 @export var weak_to := ""
 
-static var outline: ShaderMaterial
-
 func set_hover(on: bool) -> void:
-	if not outline:
-		outline = ShaderMaterial.new()
-		outline.shader = load("res://shaders/outline.gdshader")
-	for c in get_children():
-		if c is Sprite2D or c is AnimatedSprite2D:
-			c.material = outline if on else null
+	Highlight.set_on(self, on)
 
 func take_hit(dmg := 1) -> void:
 	if hits <= 0:

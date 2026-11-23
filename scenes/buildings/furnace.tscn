@@ -1,0 +1,55 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/buildings/furnace.gd" id="1_furn"]
+[ext_resource type="Texture2D" path="res://art/buildings/furnace.png" id="2_strip"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_off"]
+atlas = ExtResource("2_strip")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lit1"]
+atlas = ExtResource("2_strip")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lit2"]
+atlas = ExtResource("2_strip")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_furn"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_off")
+}],
+"loop": true,
+"name": &"off",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lit1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lit2")
+}],
+"loop": true,
+"name": &"lit",
+"speed": 6.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_furn"]
+size = Vector2(12, 7)
+
+[node name="Furnace" type="StaticBody2D"]
+script = ExtResource("1_furn")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_furn")
+animation = &"off"
+autoplay = "off"
+centered = false
+offset = Vector2(-8, -16)
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_furn")

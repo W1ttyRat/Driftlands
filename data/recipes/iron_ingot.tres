@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Recipe" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_7brti"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="2_of8sp"]
+[ext_resource type="Resource" path="res://data/items/iron_ingot.tres" id="3_o4tp8"]
+[ext_resource type="Script" path="res://scripts/items/recipe.gd" id="4_kpli5"]
+
+[resource]
+script = ExtResource("4_kpli5")
+output = ExtResource("3_o4tp8")
+inputs = Dictionary[ExtResource("1_7brti"), int]({
+ExtResource("2_of8sp"): 2
+})
+category = 4
+craft_time = 4.0
+station = "furnace"

@@ -134,3 +134,26 @@ The one-pager MVP item "basic inventory with sorting and stacking", selling poin
 
 ## Not in this step
 Placing buildings (furnace, drill), station recipes, ground item drops, resources regrowing, saving the inventory (items have an `id` for that), ores and the other islands.
+
+# Feature: building placement and the furnace (branch `feature/buildings-furnace`)
+
+## Goal
+The base for the one-pager's automation chain ("a drill feeding a furnace that outputs ingots"): buildings you craft and place, a furnace that smelts, something to smelt, and an island that does not run out.
+
+## What was built
+- **Placement** (`scripts/placer.gd`, a node in `world.tscn`): with a building item selected, a see-through copy follows the mouse snapped to the grid, green or red. Click places it and uses up the item. Blocked on water, on trees/rocks/ore, on other buildings, where a body stands, and beyond 72 px from the player. Grid helpers (`cell_at`, `cell_center`, `is_free`, `building_at`) live in `world.gd`.
+- **Buildings** extend `Building` (`scripts/buildings/building.gd`). Clicking one next to you calls `interact()` instead of swinging (the hover outline shows it). Pick up returns the item and its contents, all-or-nothing.
+- **Furnace**: 3 slots (fuel, input, output) with slot rules, so `inventory.add()` puts wood in fuel and ore in input by itself; a drill can feed it that way later. Smelts any recipe with station `furnace` and one input. Burns fuel only while smelting and keeps the unused part. Off/lit sprite. Its screen shows the slots, a fuel bar, a progress bar, why it is idle, what it smelts, and the player's inventory; drag or Shift+click between them.
+- **Inventory** now has per-slot rules (`filters`), `move_to` / `transfer` across inventories, and `take`. Slots on screen can show any inventory.
+- **Iron**: iron rock (4 hits, 2 iron ore, tile 3), iron ore, iron ingot (2 ore -> 1 ingot in 4 s, Resources tab, "Needs a Furnace" in crafting). Wood burns 8 s. Furnace recipe: 8 stone + 2 wood, 5 s. Two iron rocks start on the island.
+- **Regrowth** (`scripts/spawner.gd`): every 6 s, up to 14 resources, a weighted random tree (45), rock (35) or iron rock (20) appears on a free cell away from the player.
+- **Tests**: 107 checks. New: slot rules, furnace logic, pick up, and a building play-through in the world. The run now also fails if the world play-through stops on a script error (it used to still print all-passed).
+
+## Decisions taken without asking (easy to change)
+- One furnace input slot, single-input smelting recipes only. Buildings are 1x1 cells. Placement reach 72 px.
+- Buildings can only be removed with Pick up (no hitting them), so swinging at trees never breaks your furnace.
+- Furnace art, iron rock and the new icons are generated placeholders.
+
+## Not in this step
+The drill and the automation chain itself, more furnace recipes, a second island, saving placed buildings.
+

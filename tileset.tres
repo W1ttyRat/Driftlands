@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" path="res://Tiny Adventure Pack Plus/Tilesets/TS_Water.png" id="1_14fb3"]
 [ext_resource type="PackedScene" path="res://scenes/tree.tscn" id="2_p0366"]
 [ext_resource type="PackedScene" path="res://scenes/rock.tscn" id="3_hobn4"]
+[ext_resource type="PackedScene" path="res://scenes/iron_rock.tscn" id="4_iron"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_mjrc7"]
 texture = ExtResource("1_14fb3")
@@ -52,6 +53,7 @@ texture = ExtResource("1_14fb3")
 [sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_7y6if"]
 scenes/1/scene = ExtResource("2_p0366")
 scenes/2/scene = ExtResource("3_hobn4")
+scenes/3/scene = ExtResource("4_iron")
 
 [resource]
 physics_layer_0/collision_layer = 1

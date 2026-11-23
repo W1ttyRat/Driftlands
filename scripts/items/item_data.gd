@@ -17,5 +17,13 @@ enum Kind { TOOL, BUILDING, RESOURCE }  # also the order "Sort" puts them in
 ## Damage per swing against targets with a matching weak_to. Everything else takes 1.
 @export var power := 1
 
+@export_group("Building")
+## For kind Building: the scene placed in the world when this item is selected and you click.
+@export var building: PackedScene
+
+@export_group("Fuel")
+## Seconds one of these burns in a furnace. 0 = not a fuel.
+@export_range(0.0, 600.0, 0.1, "suffix:s") var fuel_time := 0.0
+
 func sort_key() -> String:
 	return "%d %s" % [kind, name]
