@@ -1,6 +1,6 @@
 # Driftlands
 
-2D top-down sandbox about gathering, crafting and automation (see `Forager v2 (1).pdf` for the one-pager). This repo holds the first small prototype.
+2D top-down sandbox about gathering, crafting and automation (see `Forager v2 (1).pdf` for the one-pager, and [`docs/game-design.md`](docs/game-design.md) for the full game design: rules, items, enemies, core loop and progression). This repo holds the first small prototype.
 
 ## What the prototype does
 Walk around a small island, swing toward the mouse to hit a skeleton dummy, chop trees and mine rocks. Wood and stone go into an inventory; craft a stone axe, pickaxe or sword from them in the crafting menu. A tool in the selected hotbar slot hits its own targets harder (axe: trees, pickaxe: rocks, sword: enemies). Craft a furnace, place it on the island, and smelt iron ore from the iron rocks into iron ingots, burning wood. With 3 ingots, craft a drill: put it next to a rock or iron rock and it mines it forever, feeding a furnace next to it, so iron ingots come out with no hands (the automation chain from the one-pager). Trees, rocks and iron rocks grow back over time.
@@ -51,6 +51,7 @@ Windows note: the project is set to Direct3D 12 (`project.godot`, `rendering_dev
 | `shaders/outline.gdshader` | Hover highlight |
 | `tileset.tres` | Ground tiles with water collision, plus the scene tiles: 1 tree, 2 rock, 3 iron rock |
 | `Tiny Adventure Pack Plus/` | Third-party art (no license file included, check its terms) |
+| `docs/` | `game-design.md` (the game design document) and its core loop picture |
 | `PLAN.md` | The build plan, decisions and what changed |
 | `addons/godot_mcp_toolkit/` | Optional editor plugin for AI assistants; disabled by default |
 
