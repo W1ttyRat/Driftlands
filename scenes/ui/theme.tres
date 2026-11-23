@@ -165,6 +165,14 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w06vw"]
+bg_color = Color(0.96862745, 0.4627451, 0.13333334, 1)
+border_color = Color(0, 0, 0, 0)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4uqg6"]
 content_margin_left = 8.0
 content_margin_top = 8.0
@@ -212,6 +220,26 @@ corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mwfmi"]
+bg_color = Color(0.09411765, 0.078431375, 0.14509805, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2509804, 0.28627452, 0.4509804, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3b78e"]
+bg_color = Color(0.8745098, 0.8784314, 0.9098039, 1)
+border_color = Color(0, 0, 0, 0)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oci2t"]
 content_margin_left = 6.0
@@ -366,6 +394,8 @@ CraftButton/styles/disabled = SubResource("StyleBoxFlat_860jl")
 CraftButton/styles/hover = SubResource("StyleBoxFlat_np1x8")
 CraftButton/styles/normal = SubResource("StyleBoxFlat_hh48k")
 CraftButton/styles/pressed = SubResource("StyleBoxFlat_6c3sj")
+FuelBar/base_type = &"ProgressBar"
+FuelBar/styles/fill = SubResource("StyleBoxFlat_w06vw")
 Header/base_type = &"Label"
 Header/colors/font_color = Color(0.6392157, 0.654902, 0.7607843, 1)
 Header/font_sizes/font_size = 14
@@ -382,6 +412,8 @@ LineEdit/styles/normal = SubResource("StyleBoxFlat_qoalt")
 Missing/base_type = &"Label"
 Missing/colors/font_color = Color(0.9019608, 0.27058825, 0.22352941, 1)
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_1m12o")
+ProgressBar/styles/background = SubResource("StyleBoxFlat_mwfmi")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_3b78e")
 RecipeRow/base_type = &"PanelContainer"
 RecipeRow/styles/panel = SubResource("StyleBoxFlat_oci2t")
 Slot/base_type = &"Panel"

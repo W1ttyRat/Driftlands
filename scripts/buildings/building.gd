@@ -11,9 +11,40 @@ var inventory: Inventory
 func set_hover(on: bool) -> void:
 	Highlight.set_on(self, on)
 
-## Called when the player clicks it. Buildings with a menu override this.
+## Called when the player clicks it. Machines open the machine screen; others can override.
 func interact() -> void:
-	pass
+	if inventory:
+		PlayerData.open_machine(self)
+
+# --- What the machine screen shows. Machines override these. ---
+
+## A label per inventory slot, in order. The last slot is drawn after the progress bar (the output).
+func slot_labels() -> Array[String]:
+	return []
+
+## 0..1 of the current job (smelt, drill).
+func progress() -> float:
+	return 0.0
+
+## Which slot holds fuel, or -1 if it burns nothing. The screen draws a fuel bar under it.
+func fuel_slot() -> int:
+	return -1
+
+## 0..1 left of the piece of fuel burning now.
+func fuel_left() -> float:
+	return 0.0
+
+## Why it is idle, or "" when it is working.
+func status() -> String:
+	return ""
+
+## What it does when it is working, e.g. "Smelting Iron Ingot...".
+func working_text() -> String:
+	return "Working..."
+
+## Grey help text under the status: what it makes, what it burns, where its output goes.
+func info() -> String:
+	return ""
 
 ## Puts this building and its contents into the player's inventory and removes it.
 ## Refused (returns false, nothing changes) if not all of it fits.

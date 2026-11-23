@@ -2,7 +2,7 @@ extends Node
 ## Automated checks. Run headless from the project folder:
 ##   Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/tests.tscn
 ## Exit code = number of failed checks. Add `-- --shots=<folder>` (without --headless)
-## to also save screenshots of the hotbar, the inventory, crafting and furnace screens.
+## to also save screenshots of the hotbar, the inventory, crafting and machine screens.
 
 const WOOD := preload("res://data/items/wood.tres")
 const STONE := preload("res://data/items/stone.tres")
@@ -15,10 +15,13 @@ const INGOT := preload("res://data/items/iron_ingot.tres")
 const FURNACE_ITEM := preload("res://data/items/furnace.tres")
 const FURNACE_RECIPE := preload("res://data/recipes/furnace.tres")
 const FURNACE_SCENE := preload("res://scenes/buildings/furnace.tscn")
+const DRILL_ITEM := preload("res://data/items/drill.tres")
+const DRILL_RECIPE := preload("res://data/recipes/drill.tres")
 
 var failures := 0
 var checks := 0
 var world_done := false
+var chain_drill: Node  # kept for the screenshots
 
 func check(ok: bool, what: String) -> void:
 	checks += 1
@@ -366,11 +369,13 @@ func test_world() -> void:
 		check(rock2.hits == 2, "the axe does only 1 damage to a rock")
 
 	await test_furnace_in_world(world, player, hud)
+	await test_drill_chain(world, player, hud)
 	world_done = true
 
 	if shots != "":
 		PlayerData.give(STONE, 40)
 		PlayerData.give(SWORD)
+		world.get_node("Objects").get_child(0).set_hover(true)  # show the outline shader
 		await get_tree().create_timer(0.3).timeout
 		await save_shot(shots + "/game.png")
 		hud.toggle(screen)
@@ -401,6 +406,10 @@ func test_world() -> void:
 		f.interact()
 		await get_tree().create_timer(0.6).timeout
 		await save_shot(shots + "/furnace.png")
+		hud.open(null)
+		chain_drill.interact()
+		await get_tree().create_timer(0.3).timeout
+		await save_shot(shots + "/drill.png")
 
 ## A free cell next to `around` that the placer can reach.
 func free_cell_near(world: Node, placer: Node, around: Vector2i) -> Vector2i:
@@ -473,11 +482,11 @@ func test_furnace_in_world(world: Node, player: Node2D, hud: CanvasLayer) -> voi
 	await stand_next_to(player, furnace)
 	player.use("right")
 	await get_tree().process_frame
-	var screen: Control = hud.get_node("FurnaceScreen")
+	var screen: Control = hud.get_node("MachineScreen")
 	check(screen.visible and PlayerData.menu_open, "clicking the furnace opens its screen")
 
 	var stone_slot := slot_holding(screen, inv, STONE)
-	var fuel_slot: Control = screen.find_child("FuelSlot", true, false).get_child(0)
+	var fuel_slot: Control = screen.machine_slots[0]
 	if stone_slot:
 		check(not fuel_slot._can_drop_data(Vector2.ZERO, {"inv": inv, "slot": stone_slot.index}), "stone can't be dropped in the fuel slot")
 	shift_click(slot_holding(screen, inv, IRON_ORE))
@@ -490,13 +499,86 @@ func test_furnace_in_world(world: Node, player: Node2D, hud: CanvasLayer) -> voi
 		frames += 1
 	Engine.time_scale = 1.0
 	check(furnace.inventory.get_stack(2) != null and furnace.inventory.get_stack(2).item == INGOT, "the furnace smelts an iron ingot")
-	shift_click(screen.find_child("OutputSlot", true, false).get_child(0))
+	shift_click(screen.machine_slots[2])
 	check(inv.count(INGOT) == 1 and furnace.inventory.get_stack(2) == null, "shift+click takes the ingot out")
 
 	screen.find_child("PickUp", true, false).pressed.emit()
 	await get_tree().process_frame
 	check(not is_instance_valid(furnace) and inv.count(FURNACE_ITEM) == 1, "Pick up gives the furnace back")
 	check(not screen.visible and not PlayerData.menu_open, "and closes the screen")
+
+## Wait (at 10x speed) until `done` returns true, at most `frames` frames.
+func fast_until(done: Callable, frames := 3000) -> void:
+	Engine.time_scale = 10.0
+	var n := 0
+	while not done.call() and n < frames:
+		await get_tree().process_frame
+		n += 1
+	Engine.time_scale = 1.0
+
+func select_item(item: ItemData) -> void:
+	PlayerData.select(PlayerData.inventory.slots.find_custom(func(st: ItemStack) -> bool: return st != null and st.item == item))
+
+func test_drill_chain(world: Node, player: Node2D, hud: CanvasLayer) -> void:
+	var objects: TileMapLayer = world.get_node("Objects")
+	var placer: Node = world.get_node("Placer")
+	var inv := PlayerData.inventory
+
+	# Room for an iron rock, a drill and a furnace in a row, the player below the drill,
+	# and nothing else next to the drill.
+	var row := Vector2i(-99, -99)
+	for c: Vector2i in world.data.get_used_cells():
+		var cells := [c, c + Vector2i(1, 0), c + Vector2i(2, 0), c + Vector2i(1, 1)]
+		if cells.all(func(x: Vector2i) -> bool: return world.is_free(x)) and world.object_at(c + Vector2i(1, -1)) == null \
+				and world.building_at(c + Vector2i(1, -1)) == null:
+			row = c
+			break
+	check(row.x != -99, "the island has room for a rock, a drill and a furnace in a row")
+	objects.set_cell(row, 1, Vector2i.ZERO, 3)  # an iron rock
+	for i in 3:
+		await get_tree().physics_frame
+	player.global_position = world.cell_center(row + Vector2i(1, 1))
+	await get_tree().physics_frame
+
+	PlayerData.give(INGOT, 3)
+	PlayerData.give(STONE, 6)
+	check(Crafting.enqueue(DRILL_RECIPE), "queue a drill (3 iron ingots, 6 stone)")
+	await fast_until(func() -> bool: return Crafting.queue.is_empty())
+	check(inv.count(DRILL_ITEM) == 1, "the drill is crafted")
+	select_item(DRILL_ITEM)
+	check(placer.place(row + Vector2i(1, 0)), "place the drill next to the iron rock")
+	var drill: Node = world.building_at(row + Vector2i(1, 0))
+	chain_drill = drill
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(drill.is_working() and drill.status() == "", "the drill starts mining the iron rock")
+
+	await fast_until(func() -> bool: return drill.inventory.get_stack(0) != null, 600)
+	check(drill.inventory.get_stack(0) != null and drill.inventory.get_stack(0).item == IRON_ORE, "with no machine next to it, the ore stays in the drill")
+	check(world.object_at(row) != null, "the rock is not used up")
+
+	select_item(FURNACE_ITEM)
+	check(placer.place(row + Vector2i(2, 0)), "place a furnace on the drill's other side")
+	var furnace: Node = world.building_at(row + Vector2i(2, 0))
+	furnace.inventory.add(WOOD, 3)
+	await fast_until(func() -> bool: return furnace.inventory.get_stack(2) != null)
+	check(furnace.inventory.get_stack(2) != null and furnace.inventory.get_stack(2).item == INGOT, "rock -> drill -> furnace makes an iron ingot by itself")
+	check(drill.inventory.get_stack(0).count == 1, "new ore went into the furnace, not the drill")
+
+	drill.interact()
+	await get_tree().process_frame
+	var screen: Control = hud.get_node("MachineScreen")
+	check(screen.visible and screen.machine_slots.size() == 1 and screen.find_child("Title", true, false).text == "Drill", "clicking the drill opens the machine screen with its one slot")
+	check(screen.find_child("Info", true, false).text.contains("Sends it into the Furnace"), "the drill screen says where the ore goes")
+	var ore_before := inv.count(IRON_ORE)
+	shift_click(screen.machine_slots[0])
+	check(inv.count(IRON_ORE) == ore_before + 1 and drill.inventory.get_stack(0) == null, "shift+click takes the drill's ore")
+	hud.open(null)
+
+	objects.erase_cell(row)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(not drill.is_working() and drill.status().begins_with("Place it next to"), "with the rock gone, the drill stops and says why")
 
 func action_event(action: String) -> InputEventAction:
 	var e := InputEventAction.new()
