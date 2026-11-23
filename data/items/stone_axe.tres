@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://art/icons/stone_axe.png" id="1_2efbl"]
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="2_epecw"]
+
+[resource]
+script = ExtResource("2_epecw")
+id = &"stone_axe"
+name = "Stone Axe"
+icon = ExtResource("1_2efbl")
+description = "Chops trees faster."
+kind = 0
+max_stack = 1
+tool_type = "axe"
+power = 2

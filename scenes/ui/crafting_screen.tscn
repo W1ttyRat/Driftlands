@@ -1,0 +1,206 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/crafting_screen.gd" id="1_craft"]
+
+[node name="CraftingScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_craft")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0941176, 0.0784314, 0.145098, 0.6)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -64.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(1010, 500)
+layout_mode = 2
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Top" type="HBoxContainer" parent="Center/Panel/Layout"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Center/Panel/Layout/Top"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Title"
+text = "Crafting"
+
+[node name="Search" type="LineEdit" parent="Center/Panel/Layout/Top"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+placeholder_text = "Search..."
+clear_button_enabled = true
+
+[node name="Body" type="HBoxContainer" parent="Center/Panel/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="Categories" type="VBoxContainer" parent="Center/Panel/Layout/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="GridScroll" type="ScrollContainer" parent="Center/Panel/Layout/Body"]
+custom_minimum_size = Vector2(424, 0)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="GridBox" type="VBoxContainer" parent="Center/Panel/Layout/Body/GridScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Grid" type="GridContainer" parent="Center/Panel/Layout/Body/GridScroll/GridBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 6
+
+[node name="NoMatches" type="Label" parent="Center/Panel/Layout/Body/GridScroll/GridBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Hint"
+text = "Nothing matches."
+
+[node name="Line" type="VSeparator" parent="Center/Panel/Layout/Body"]
+layout_mode = 2
+
+[node name="Details" type="VBoxContainer" parent="Center/Panel/Layout/Body"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Empty" type="Label" parent="Center/Panel/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 6
+theme_type_variation = &"Hint"
+text = "Pick something to craft."
+horizontal_alignment = 1
+
+[node name="Info" type="VBoxContainer" parent="Center/Panel/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="Head" type="HBoxContainer" parent="Center/Panel/Layout/Body/Details/Info"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="BigIcon" type="TextureRect" parent="Center/Panel/Layout/Body/Details/Info/Head"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Text" type="VBoxContainer" parent="Center/Panel/Layout/Body/Details/Info/Head"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="ItemName" type="Label" parent="Center/Panel/Layout/Body/Details/Info/Head/Text"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Title"
+
+[node name="Description" type="Label" parent="Center/Panel/Layout/Body/Details/Info/Head/Text"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="Time" type="Label" parent="Center/Panel/Layout/Body/Details/Info/Head/Text"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Hint"
+
+[node name="Favorite" type="Button" parent="Center/Panel/Layout/Body/Details/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+focus_mode = 0
+text = "Favorite"
+
+[node name="Requires" type="Label" parent="Center/Panel/Layout/Body/Details/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Missing"
+
+[node name="Table" type="GridContainer" parent="Center/Panel/Layout/Body/Details/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 16
+columns = 4
+
+[node name="Spacer" type="Control" parent="Center/Panel/Layout/Body/Details/Info"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Amount" type="HBoxContainer" parent="Center/Panel/Layout/Body/Details/Info"]
+layout_mode = 2
+
+[node name="Minus" type="Button" parent="Center/Panel/Layout/Body/Details/Info/Amount"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+focus_mode = 0
+text = "-"
+
+[node name="Qty" type="LineEdit" parent="Center/Panel/Layout/Body/Details/Info/Amount"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "1"
+alignment = 1
+max_length = 3
+
+[node name="Plus" type="Button" parent="Center/Panel/Layout/Body/Details/Info/Amount"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+focus_mode = 0
+text = "+"
+
+[node name="Gap" type="Control" parent="Center/Panel/Layout/Body/Details/Info/Amount"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Craft" type="Button" parent="Center/Panel/Layout/Body/Details/Info/Amount"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 44)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"CraftButton"
+text = "Craft"
+
+[node name="Hint" type="Label" parent="Center/Panel/Layout"]
+layout_mode = 2
+theme_type_variation = &"Hint"
+text = "Q / Esc: close   ·   Tab: inventory   ·   Queued items show bottom right; click one to cancel it"
+horizontal_alignment = 1

@@ -1,13 +1,59 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/hud.gd" id="1_ahhtf"]
+[ext_resource type="Script" path="res://scripts/ui/slot_grid.gd" id="2_grid"]
+[ext_resource type="PackedScene" path="res://scenes/ui/inventory_screen.tscn" id="3_screen"]
+[ext_resource type="PackedScene" path="res://scenes/ui/crafting_screen.tscn" id="4_craft"]
+[ext_resource type="Script" path="res://scripts/ui/craft_queue.gd" id="5_queue"]
 
 [node name="HUD" type="CanvasLayer" unique_id=1113730169]
 script = ExtResource("1_ahhtf")
 
-[node name="Label" type="Label" parent="." unique_id=1758541386]
-offset_left = 12.0
-offset_top = 8.0
-offset_right = 12.0
-offset_bottom = 8.0
-theme_override_font_sizes/font_size = 24
+[node name="Hotbar" type="GridContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -238.0
+offset_top = -68.0
+offset_right = 238.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+columns = 8
+script = ExtResource("2_grid")
+hotbar = true
+
+[node name="Toasts" type="VBoxContainer" parent="."]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -220.0
+offset_right = 316.0
+offset_bottom = -16.0
+grow_vertical = 0
+mouse_filter = 2
+alignment = 2
+
+[node name="InventoryScreen" parent="." instance=ExtResource("3_screen")]
+visible = false
+
+[node name="CraftingScreen" parent="." instance=ExtResource("4_craft")]
+visible = false
+
+[node name="CraftQueue" type="HBoxContainer" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -500.0
+offset_top = -68.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+alignment = 2
+script = ExtResource("5_queue")

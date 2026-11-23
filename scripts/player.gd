@@ -19,7 +19,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		want_attack = true
 
 func _physics_process(_delta: float) -> void:
-	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var dir := Vector2.ZERO
+	if not PlayerData.menu_open:
+		dir = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = dir * SPEED
 	move_and_slide()
 	if not swinging:
@@ -28,7 +30,7 @@ func _physics_process(_delta: float) -> void:
 		sprite.play(("walk_" if dir != Vector2.ZERO else "idle_") + facing)
 	_update_hover()
 	if want_attack and not swinging:
-		_swing()
+		_swing(_aim())
 	want_attack = false
 
 func _snap(v: Vector2) -> String:
@@ -62,11 +64,18 @@ func _update_hover() -> void:
 		t.set_hover(true)
 	hovered = now
 
-func _swing() -> void:
+# The tool in the selected hotbar slot does its power against targets weak to it; anything else does 1.
+func _damage_to(target: Node) -> int:
+	var tool := PlayerData.held()
+	if tool and tool.tool_type != "" and tool.tool_type == target.weak_to:
+		return tool.power
+	return 1
+
+func _swing(face: String) -> void:
 	swinging = true
-	facing = _aim()
+	facing = face
 	for t in _targets(facing):
-		t.take_hit(1)
+		t.take_hit(_damage_to(t))
 	sprite.offset = SPRITE_OFFSET + ATTACK_SHIFT[facing]
 	sprite.play("atk_" + facing)
 	await sprite.animation_finished

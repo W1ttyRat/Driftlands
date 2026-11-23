@@ -2,13 +2,16 @@
 
 [ext_resource type="Script" path="res://scripts/hittable.gd" id="1_mek2u"]
 [ext_resource type="Texture2D" path="res://Tiny Adventure Pack Plus/Other/Misc/Rock.png" id="2_ik6fu"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="3_drop"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_872ht"]
 radius = 6.0
 
 [node name="Rock" type="StaticBody2D" unique_id=457238737]
 script = ExtResource("1_mek2u")
-drop = "stone"
+drop = ExtResource("3_drop")
+drop_count = 3
+weak_to = "pickaxe"
 
 [node name="@Sprite2D@4" type="Sprite2D" parent="." unique_id=879308136]
 position = Vector2(-7.5, -15)
