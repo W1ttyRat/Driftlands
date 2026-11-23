@@ -23,6 +23,13 @@ var favorites := {}  # Recipe -> true
 func recipes() -> Array[Recipe]:
 	return BOOK.recipes
 
+## The recipe at `station` (e.g. "furnace") that takes `item` as its only input, or null.
+func recipe_using(item: ItemData, station: String) -> Recipe:
+	for r in recipes():
+		if r.station == station and r.inputs.size() == 1 and r.inputs.has(item):
+			return r
+	return null
+
 func can_queue(recipe: Recipe, times: int) -> bool:
 	return recipe.by_hand() and times > 0 and queue.size() < MAX_JOBS \
 		and PlayerData.inventory.has_all(recipe.costs(times))

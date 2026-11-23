@@ -28,9 +28,12 @@ func _physics_process(_delta: float) -> void:
 		if dir != Vector2.ZERO:
 			facing = _snap(dir)
 		sprite.play(("walk_" if dir != Vector2.ZERO else "idle_") + facing)
-	_update_hover()
-	if want_attack and not swinging:
-		_swing(_aim())
+	# With a building selected, clicks place it (placer.gd) instead of swinging.
+	var held := PlayerData.held()
+	var placing := held != null and held.building != null
+	_update_hover(placing)
+	if want_attack and not swinging and not placing:
+		use(_aim())
 	want_attack = false
 
 func _snap(v: Vector2) -> String:
@@ -41,7 +44,7 @@ func _snap(v: Vector2) -> String:
 func _aim() -> String:
 	return _snap(get_global_mouse_position() - (global_position + CHEST))
 
-# Everything a swing in this direction would hit.
+# Everything a swing in this direction would hit or open.
 func _targets(face: String) -> Array:
 	var q := PhysicsShapeQueryParameters2D.new()
 	var box := RectangleShape2D.new()
@@ -51,12 +54,12 @@ func _targets(face: String) -> Array:
 	q.exclude = [get_rid()]
 	var out := []
 	for hit in get_world_2d().direct_space_state.intersect_shape(q):
-		if hit.collider.has_method("take_hit"):
+		if hit.collider.has_method("take_hit") or hit.collider.has_method("interact"):
 			out.append(hit.collider)
 	return out
 
-func _update_hover() -> void:
-	var now := _targets(_aim())
+func _update_hover(placing := false) -> void:
+	var now := [] if placing else _targets(_aim())
 	for t in hovered:
 		if is_instance_valid(t) and not t in now:
 			t.set_hover(false)
@@ -71,11 +74,20 @@ func _damage_to(target: Node) -> int:
 		return tool.power
 	return 1
 
+## A click toward `face`: opens a building there (the furnace), otherwise swings.
+func use(face: String) -> void:
+	for t in _targets(face):
+		if t.has_method("interact"):
+			t.interact()
+			return
+	_swing(face)
+
 func _swing(face: String) -> void:
 	swinging = true
 	facing = face
 	for t in _targets(facing):
-		t.take_hit(_damage_to(t))
+		if t.has_method("take_hit"):
+			t.take_hit(_damage_to(t))
 	sprite.offset = SPRITE_OFFSET + ATTACK_SHIFT[facing]
 	sprite.play("atk_" + facing)
 	await sprite.animation_finished

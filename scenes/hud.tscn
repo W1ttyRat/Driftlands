@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_screen.tscn" id="3_screen"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crafting_screen.tscn" id="4_craft"]
 [ext_resource type="Script" path="res://scripts/ui/craft_queue.gd" id="5_queue"]
+[ext_resource type="PackedScene" path="res://scenes/ui/furnace_screen.tscn" id="6_furnace"]
 
 [node name="HUD" type="CanvasLayer" unique_id=1113730169]
 script = ExtResource("1_ahhtf")
@@ -41,6 +42,9 @@ alignment = 2
 visible = false
 
 [node name="CraftingScreen" parent="." instance=ExtResource("4_craft")]
+visible = false
+
+[node name="FurnaceScreen" parent="." instance=ExtResource("6_furnace")]
 visible = false
 
 [node name="CraftQueue" type="HBoxContainer" parent="."]

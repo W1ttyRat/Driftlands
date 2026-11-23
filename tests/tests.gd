@@ -2,7 +2,7 @@ extends Node
 ## Automated checks. Run headless from the project folder:
 ##   Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/tests.tscn
 ## Exit code = number of failed checks. Add `-- --shots=<folder>` (without --headless)
-## to also save screenshots of the hotbar, the inventory screen and the crafting screen.
+## to also save screenshots of the hotbar, the inventory, crafting and furnace screens.
 
 const WOOD := preload("res://data/items/wood.tres")
 const STONE := preload("res://data/items/stone.tres")
@@ -10,9 +10,15 @@ const AXE := preload("res://data/items/stone_axe.tres")
 const SWORD := preload("res://data/items/stone_sword.tres")
 const PICK_RECIPE := preload("res://data/recipes/stone_pickaxe.tres")
 const AXE_RECIPE := preload("res://data/recipes/stone_axe.tres")
+const IRON_ORE := preload("res://data/items/iron_ore.tres")
+const INGOT := preload("res://data/items/iron_ingot.tres")
+const FURNACE_ITEM := preload("res://data/items/furnace.tres")
+const FURNACE_RECIPE := preload("res://data/recipes/furnace.tres")
+const FURNACE_SCENE := preload("res://scenes/buildings/furnace.tscn")
 
 var failures := 0
 var checks := 0
+var world_done := false
 
 func check(ok: bool, what: String) -> void:
 	checks += 1
@@ -28,7 +34,10 @@ func _ready() -> void:
 	test_recipe()
 	test_player_data()
 	test_crafting_queue()
+	test_slot_rules()
+	await test_furnace()
 	await test_world()
+	check(world_done, "the world play-through ran to the end (no script error)")
 	print("%d/%d checks passed" % [checks - failures, checks])
 	get_tree().quit(failures)
 
@@ -158,6 +167,60 @@ func test_crafting_queue() -> void:
 	check(Crafting.cancel(0) and Crafting.queue.is_empty() and inv.count(WOOD) == 3 and inv.count(STONE) == 2, "cancel works once there is room")
 	reset_player()
 
+func test_slot_rules() -> void:
+	var a := Inventory.new(2)
+	var b := Inventory.new(2)
+	b.filters = {0: func(it: ItemData) -> bool: return it == WOOD}
+	a.add(STONE, 5, [0])
+	a.add(WOOD, 4, [1])
+	a.move_to(0, b, 0)
+	check(b.get_stack(0) == null and a.get_stack(0).count == 5, "a slot rule blocks the wrong item")
+	a.move_to(1, b, 0, 3)
+	check(describe(a) == "stone:5 wood:1" and describe(b) == "wood:3 -", "move part of a stack into another inventory")
+	a.transfer(0, [], b)
+	check(describe(a) == "- wood:1" and describe(b) == "wood:3 stone:5", "transfer to another inventory picks slots that accept it")
+	b.move_to(1, a, 1)
+	check(describe(a) == "- stone:5" and describe(b) == "wood:3 wood:1", "drop on a different item swaps across inventories")
+	check(b.space_for(STONE) == 0 and b.space_for(WOOD) == 96 + 98, "space_for respects slot rules")
+
+func test_furnace() -> void:
+	var f: Node = FURNACE_SCENE.instantiate()
+	add_child(f)
+	f.set_process(false)  # driven by hand below
+	var inv: Inventory = f.inventory
+	check(inv.add(WOOD, 2) == 0 and inv.get_stack(0).item == WOOD, "wood goes into the fuel slot by itself")
+	check(inv.add(STONE, 1) == 1, "the furnace takes no stone (not fuel, nothing to smelt)")
+	check(inv.add(IRON_ORE, 5) == 0 and inv.get_stack(1).count == 5, "ore goes into the input slot")
+	f._process(0.1)
+	check(f.is_lit() and inv.get_stack(0).count == 1 and is_equal_approx(f.burn_left, 7.9), "it lights and burns one wood")
+	f._process(3.95)
+	check(inv.get_stack(2) != null and inv.get_stack(2).item == INGOT and inv.get_stack(1).count == 3, "2 iron ore make 1 ingot in 4 s")
+	f._process(4.0)
+	check(inv.get_stack(2).count == 2 and inv.get_stack(1).count == 1, "second ingot")
+	f._process(1.0)
+	check(not f.is_lit() and f.status().begins_with("Needs 2 Iron Ore") and inv.get_stack(0).count == 1, "1 ore is not enough: it stops and keeps its wood")
+	var burn: float = f.burn_left
+	f._process(5.0)
+	check(f.burn_left == burn, "no fuel burns while it is idle")
+	inv.slots[2].count = INGOT.max_stack
+	inv.add(IRON_ORE, 1)
+	f._process(0.1)
+	check(not f.is_lit() and f.status() == "Output is full.", "a full output stops it")
+	inv.slots[2].count = 2
+
+	reset_player()
+	f.item = FURNACE_ITEM
+	var full := PlayerData.inventory
+	for i in full.size():
+		full.slots[i] = ItemStack.new(AXE)
+	check(not f.pick_up() and is_instance_valid(f) and inv.get_stack(2).count == 2, "pick up is refused when it all doesn't fit")
+	reset_player()
+	check(f.pick_up(), "pick up works with room")
+	check(full.count(FURNACE_ITEM) == 1 and full.count(INGOT) == 2 and full.count(WOOD) == 1 and full.count(IRON_ORE) == 2, "pick up returns the furnace and everything in it")
+	await get_tree().process_frame
+	check(not is_instance_valid(f), "the picked-up furnace is gone")
+	reset_player()
+
 # --- In the real world scene -----------------------------------------------
 
 func swing(player: Node, face: String) -> void:
@@ -178,8 +241,10 @@ func test_world() -> void:
 		await get_tree().physics_frame
 	var player: Node2D = world.get_node("Player")
 	var hud: CanvasLayer = world.get_node("HUD")
-	var trees: Array = world.get_node("Objects").get_children().filter(func(n: Node) -> bool: return n.weak_to == "axe")
-	var rocks: Array = world.get_node("Objects").get_children().filter(func(n: Node) -> bool: return n.weak_to == "pickaxe")
+	world.get_node("Spawner").set_process(false)  # regrowth is tested on its own below
+	var objects: TileMapLayer = world.get_node("Objects")
+	var trees: Array = objects.get_children().filter(func(n: Node) -> bool: return n.drop == WOOD)
+	var rocks: Array = objects.get_children().filter(func(n: Node) -> bool: return n.drop == STONE)
 	check(trees.size() >= 2 and rocks.size() >= 1, "world has trees and rocks")
 
 	var shots := ""
@@ -220,7 +285,7 @@ func test_world() -> void:
 
 	var grid: GridContainer = crafting.find_child("Grid", true, false)
 	var search: LineEdit = crafting.find_child("Search", true, false)
-	check(grid.get_child_count() == 3, "All shows every recipe")
+	check(grid.get_child_count() == Crafting.recipes().size(), "All shows every recipe")
 	crafting._categories[Recipe.Category.TOOLS].button_pressed = true
 	await get_tree().process_frame
 	check(grid.get_child_count() == 2, "Tools shows the axe and the pickaxe")
@@ -274,7 +339,7 @@ func test_world() -> void:
 	check(screen.visible and not hud.get_node("Hotbar").visible, "Tab opens the inventory and hides the bottom hotbar")
 	# Drag the axe from hotbar slot 1 to slot 3 in the screen, then pick it with key 3.
 	var slots: Array = screen.find_children("*", "Panel", true, false).filter(func(s: Node) -> bool: return s.hotbar)
-	slots[2]._drop_data(Vector2.ZERO, {"slot": 0})
+	slots[2]._drop_data(Vector2.ZERO, {"inv": PlayerData.inventory, "slot": 0})
 	check(PlayerData.inventory.get_stack(2).item == AXE and PlayerData.inventory.get_stack(0) == null, "drag and drop moves the axe")
 	check(slots[2].icon.texture == AXE.icon and slots[0].icon.texture == null, "slots redraw after a move")
 	Input.parse_input_event(action_event("inventory"))
@@ -300,6 +365,9 @@ func test_world() -> void:
 		await swing(player, "right")
 		check(rock2.hits == 2, "the axe does only 1 damage to a rock")
 
+	await test_furnace_in_world(world, player, hud)
+	world_done = true
+
 	if shots != "":
 		PlayerData.give(STONE, 40)
 		PlayerData.give(SWORD)
@@ -316,6 +384,119 @@ func test_world() -> void:
 		crafting.find_child("Plus", true, false).pressed.emit()
 		await get_tree().create_timer(0.2).timeout
 		await save_shot(shots + "/crafting.png")
+		hud.open(null)
+		PlayerData.give(FURNACE_ITEM)
+		PlayerData.give(IRON_ORE, 6)
+		PlayerData.select(PlayerData.inventory.slots.find_custom(func(st: ItemStack) -> bool: return st != null and st.item == FURNACE_ITEM))
+		player.global_position = world.cell_center(Vector2i(7, 4)) + Vector2(0, 6)
+		await get_tree().physics_frame
+		var placer: Node = world.get_node("Placer")
+		var spot := free_cell_near(world, placer, Vector2i(7, 4))
+		placer.place(spot)
+		var f: Node = world.building_at(spot)
+		f.inventory.add(WOOD, 3)
+		f.inventory.add(IRON_ORE, 4)
+		await get_tree().create_timer(1.5).timeout
+		await save_shot(shots + "/furnace_world.png")
+		f.interact()
+		await get_tree().create_timer(0.6).timeout
+		await save_shot(shots + "/furnace.png")
+
+## A free cell next to `around` that the placer can reach.
+func free_cell_near(world: Node, placer: Node, around: Vector2i) -> Vector2i:
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, -1), Vector2i(2, 0)]:
+		if placer.can_place(around + d):
+			return around + d
+	return Vector2i(-99, -99)
+
+func shift_click(slot: Control) -> void:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_LEFT
+	e.pressed = true
+	e.shift_pressed = true
+	slot._gui_input(e)
+
+func slot_holding(screen: Node, inv: Inventory, item: ItemData) -> Control:
+	for s in screen.find_children("*", "Panel", true, false):
+		if s.inventory == inv and s.inventory.get_stack(s.index) and s.inventory.get_stack(s.index).item == item:
+			return s
+	return null
+
+func test_furnace_in_world(world: Node, player: Node2D, hud: CanvasLayer) -> void:
+	var objects: TileMapLayer = world.get_node("Objects")
+	var placer: Node = world.get_node("Placer")
+	var inv := PlayerData.inventory
+
+	# Iron rocks and regrowth.
+	var irons: Array = objects.get_children().filter(func(n: Node) -> bool: return n.drop == IRON_ORE)
+	check(irons.size() == 2, "the island starts with 2 iron rocks")
+	await stand_next_to(player, irons[0])
+	for i in 4:
+		await swing(player, "right")
+	check(inv.count(IRON_ORE) == 2, "an iron rock takes 4 hits and gives 2 iron ore")
+	var before := objects.get_used_cells().size()
+	check(world.get_node("Spawner").spawn(), "regrowth finds a free cell")
+	check(objects.get_used_cells().size() == before + 1, "regrowth adds a tree, rock or iron rock")
+
+	# Craft a furnace; it lands in the hotbar.
+	PlayerData.give(STONE, 8)
+	PlayerData.give(WOOD, 4)
+	check(Crafting.enqueue(FURNACE_RECIPE), "queue a furnace (8 stone, 2 wood)")
+	Engine.time_scale = 10.0
+	while not Crafting.queue.is_empty():
+		await get_tree().process_frame
+	Engine.time_scale = 1.0
+	var slot := inv.slots.find_custom(func(st: ItemStack) -> bool: return st != null and st.item == FURNACE_ITEM)
+	check(slot >= 0 and slot < PlayerData.HOTBAR, "the furnace lands in the hotbar")
+	PlayerData.select(slot)
+
+	# Placing it.
+	player.global_position = world.cell_center(Vector2i(7, 4)) + Vector2(0, 6)
+	for i in 2:
+		await get_tree().physics_frame
+	check(placer.ghost != null, "holding a building shows a ghost of it")
+	check(not placer.place(Vector2i(0, 0)), "can't place on water")
+	check(not placer.place(world.cell_at(player.global_position)), "can't place where the player stands")
+	var tree_cell: Vector2i = objects.get_used_cells()[0]
+	check(not placer.place(tree_cell), "can't place on a tree or rock")
+	check(not placer.place(Vector2i(13, 8)), "can't place out of reach")
+	var spot := free_cell_near(world, placer, Vector2i(7, 4))
+	check(placer.place(spot), "places on a free cell in reach")
+	var furnace: Node2D = world.building_at(spot)
+	check(furnace != null and inv.count(FURNACE_ITEM) == 0, "the furnace is in the world and used up from the hotbar")
+	check(not world.is_free(spot), "a placed building fills its cell")
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	check(placer.ghost == null, "the ghost goes away with nothing to place")
+
+	# Clicking it opens its screen instead of swinging.
+	await stand_next_to(player, furnace)
+	player.use("right")
+	await get_tree().process_frame
+	var screen: Control = hud.get_node("FurnaceScreen")
+	check(screen.visible and PlayerData.menu_open, "clicking the furnace opens its screen")
+
+	var stone_slot := slot_holding(screen, inv, STONE)
+	var fuel_slot: Control = screen.find_child("FuelSlot", true, false).get_child(0)
+	if stone_slot:
+		check(not fuel_slot._can_drop_data(Vector2.ZERO, {"inv": inv, "slot": stone_slot.index}), "stone can't be dropped in the fuel slot")
+	shift_click(slot_holding(screen, inv, IRON_ORE))
+	shift_click(slot_holding(screen, inv, WOOD))
+	check(furnace.inventory.get_stack(1).item == IRON_ORE and furnace.inventory.get_stack(0).item == WOOD, "shift+click sends ore to the input and wood to the fuel slot")
+	Engine.time_scale = 10.0
+	var frames := 0
+	while furnace.inventory.get_stack(2) == null and frames < 600:
+		await get_tree().process_frame
+		frames += 1
+	Engine.time_scale = 1.0
+	check(furnace.inventory.get_stack(2) != null and furnace.inventory.get_stack(2).item == INGOT, "the furnace smelts an iron ingot")
+	shift_click(screen.find_child("OutputSlot", true, false).get_child(0))
+	check(inv.count(INGOT) == 1 and furnace.inventory.get_stack(2) == null, "shift+click takes the ingot out")
+
+	screen.find_child("PickUp", true, false).pressed.emit()
+	await get_tree().process_frame
+	check(not is_instance_valid(furnace) and inv.count(FURNACE_ITEM) == 1, "Pick up gives the furnace back")
+	check(not screen.visible and not PlayerData.menu_open, "and closes the screen")
 
 func action_event(action: String) -> InputEventAction:
 	var e := InputEventAction.new()

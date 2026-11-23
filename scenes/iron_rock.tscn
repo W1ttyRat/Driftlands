@@ -1,0 +1,24 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/hittable.gd" id="1_hit"]
+[ext_resource type="Texture2D" path="res://art/resources/iron_rock.png" id="2_tex"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="3_drop"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_iron"]
+radius = 6.0
+
+[node name="IronRock" type="StaticBody2D"]
+script = ExtResource("1_hit")
+hits = 4
+drop = ExtResource("3_drop")
+drop_count = 2
+weak_to = "pickaxe"
+
+[node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(-7.5, -15)
+texture = ExtResource("2_tex")
+centered = false
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+position = Vector2(0, -6)
+shape = SubResource("CircleShape2D_iron")

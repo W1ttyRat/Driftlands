@@ -1,15 +1,21 @@
 extends CanvasLayer
-## Hotbar, pickup messages, crafting queue, and the two menus:
-## Tab / I = inventory, Q = crafting. One menu at a time; Esc closes it.
+## Hotbar, pickup messages, crafting queue, and the menus: Tab / I = inventory, Q = crafting,
+## and a building's own screen when you click it (furnace). One menu at a time; Esc closes it.
 
 @onready var hotbar: Control = $Hotbar
 @onready var toasts: VBoxContainer = $Toasts
 @onready var inventory: Control = $InventoryScreen
 @onready var crafting: Control = $CraftingScreen
+@onready var furnace: Control = $FurnaceScreen
+@onready var menus: Array[Control] = [inventory, crafting, furnace]
 
 func _ready() -> void:
-	inventory.hide()
-	crafting.hide()
+	for m in menus:
+		m.hide()
+	PlayerData.machine_opened.connect(func(machine: Node) -> void:
+		furnace.open_for(machine)
+		open(furnace))
+	furnace.close_requested.connect(open.bind(null))
 	PlayerData.gained.connect(func(item: ItemData, n: int) -> void: toast("+%d %s" % [n, item.name]))
 	PlayerData.inventory_full.connect(func(_item: ItemData) -> void: toast("Inventory full!"))
 
@@ -35,9 +41,9 @@ func open(menu: Control) -> void:
 	var focus := get_viewport().gui_get_focus_owner()
 	if focus:
 		focus.release_focus()
-	inventory.visible = menu == inventory
-	crafting.visible = menu == crafting
-	hotbar.visible = not inventory.visible  # the inventory screen has its own copy of the hotbar
+	for m in menus:
+		m.visible = m == menu
+	hotbar.visible = menu != inventory and menu != furnace  # those screens have their own hotbar
 	PlayerData.menu_open = menu != null
 
 func toast(text: String) -> void:

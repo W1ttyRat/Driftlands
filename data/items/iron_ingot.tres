@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://art/icons/iron_ingot.png" id="1_beyju"]
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="2_b4tt0"]
+
+[resource]
+script = ExtResource("2_b4tt0")
+id = &"iron_ingot"
+name = "Iron Ingot"
+icon = ExtResource("1_beyju")
+description = "Smelted from iron ore."

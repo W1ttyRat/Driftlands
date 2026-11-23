@@ -8,4 +8,5 @@ script = ExtResource("2_6crmk")
 id = &"wood"
 name = "Wood"
 icon = ExtResource("1_qnvr4")
-description = "Chopped from trees."
+description = "Chopped from trees. Burns in a furnace."
+fuel_time = 8.0

@@ -1,12 +1,15 @@
 class_name Inventory
 extends RefCounted
 ## A fixed number of slots, each empty (null) or holding one ItemStack.
-## The player's bag uses it now; chests and machines can use it later.
+## The player's bag and machines (the furnace) use it.
 ## "order" arguments are lists of slot indices, saying which slots to try and in what order.
 
 signal changed
 
 var slots: Array[ItemStack] = []
+## Optional per-slot rules: slot index -> Callable(item: ItemData) -> bool. A furnace's fuel slot
+## only takes fuel, its output slot takes nothing from outside. Slots without a rule take anything.
+var filters := {}
 
 func _init(size: int) -> void:
 	slots.resize(size)
@@ -24,6 +27,9 @@ func count(item: ItemData) -> int:
 			n += s.count
 	return n
 
+func accepts(i: int, item: ItemData) -> bool:
+	return not filters.has(i) or filters[i].call(item)
+
 ## `costs` maps ItemData to an amount.
 func has_all(costs: Dictionary) -> bool:
 	for item in costs:
@@ -38,6 +44,8 @@ func space_for(item: ItemData, order: Array = []) -> int:
 	var n := 0
 	for i in order:
 		var s := slots[i]
+		if not accepts(i, item):
+			continue
 		if s == null:
 			n += item.max_stack
 		elif s.item == item:
@@ -52,12 +60,12 @@ func add(item: ItemData, amount: int, order: Array = []) -> int:
 	var left := amount
 	for i in order:
 		var s := slots[i]
-		if left > 0 and s and s.item == item and s.count < item.max_stack:
+		if left > 0 and s and s.item == item and s.count < item.max_stack and accepts(i, item):
 			var n := mini(left, item.max_stack - s.count)
 			s.count += n
 			left -= n
 	for i in order:
-		if left > 0 and slots[i] == null:
+		if left > 0 and slots[i] == null and accepts(i, item):
 			var n := mini(left, item.max_stack)
 			slots[i] = ItemStack.new(item, n)
 			left -= n
@@ -85,18 +93,23 @@ func remove(item: ItemData, amount: int) -> bool:
 ## Drag and drop. Moves `amount` (default: all) from slot `from` onto slot `to`.
 ## Onto the same item it merges as much as fits; onto a different item a whole stack swaps places.
 func move(from: int, to: int, amount := -1) -> void:
+	move_to(from, self, to, amount)
+
+## Like move(), but into slot `to` of `dest`, which can be another inventory (player <-> furnace).
+## Respects both sides' slot rules.
+func move_to(from: int, dest: Inventory, to: int, amount := -1) -> void:
 	var a := slots[from]
-	if from == to or a == null:
+	if a == null or (dest == self and from == to) or not dest.accepts(to, a.item):
 		return
 	if amount < 0 or amount > a.count:
 		amount = a.count
-	var b := slots[to]
+	var b := dest.slots[to]
 	if b == null:
 		if amount == a.count:
-			slots[to] = a
+			dest.slots[to] = a
 			slots[from] = null
 		else:
-			slots[to] = ItemStack.new(a.item, amount)
+			dest.slots[to] = ItemStack.new(a.item, amount)
 			a.count -= amount
 	elif b.item == a.item:
 		var n := mini(amount, a.item.max_stack - b.count)
@@ -106,24 +119,43 @@ func move(from: int, to: int, amount := -1) -> void:
 		a.count -= n
 		if a.count == 0:
 			slots[from] = null
-	elif amount == a.count:
-		slots[to] = a
+	elif amount == a.count and accepts(from, b.item):
+		dest.slots[to] = a
 		slots[from] = b
 	else:
 		return
 	changed.emit()
+	if dest != self:
+		dest.changed.emit()
 
-## Moves the stack in slot `i` into the slots in `targets` (topping up first). What does not fit stays.
-func transfer(i: int, targets: Array) -> void:
+## Moves the stack in slot `i` into the slots in `targets` of `dest` (default: this inventory),
+## topping up first. An empty `targets` means every slot that accepts it. What does not fit stays.
+func transfer(i: int, targets: Array, dest: Inventory = null) -> void:
+	if dest == null:
+		dest = self
 	var s := slots[i]
 	if s == null:
 		return
 	slots[i] = null
-	var left := add(s.item, s.count, targets.filter(func(t): return t != i))
+	if dest == self:
+		targets = targets.filter(func(t: int) -> bool: return t != i)
+	var left := dest.add(s.item, s.count, targets)
 	if left > 0:
 		s.count = left
 		slots[i] = s
 	changed.emit()
+
+## Takes up to `n` from slot `i`. Returns how many were taken.
+func take(i: int, n := 1) -> int:
+	var s := slots[i]
+	if s == null:
+		return 0
+	n = mini(n, s.count)
+	s.count -= n
+	if s.count == 0:
+		slots[i] = null
+	changed.emit()
+	return n
 
 ## Moves half of the stack in slot `i` into the first empty slot in `order`.
 func split(i: int, order: Array = []) -> void:
