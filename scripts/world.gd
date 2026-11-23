@@ -28,6 +28,7 @@ func _ready() -> void:
 			ground.set_cell(Vector2i(x, y), 0, TILES.get(key, TILES["0000"]))
 	if not Engine.is_editor_hint():
 		data.hide()
+		add_to_group("world")  # machines (the drill) find the grid through this
 
 # --- Grid helpers for placing buildings and regrowing resources (cells of the Data/Objects grid) ---
 
@@ -40,6 +41,13 @@ func cell_center(cell: Vector2i) -> Vector2:
 
 func is_land(cell: Vector2i) -> bool:
 	return data.get_cell_source_id(cell) != -1
+
+## The tree, rock or iron rock standing on `cell`, or null.
+func object_at(cell: Vector2i) -> Node:
+	for o in objects.get_children():
+		if cell_at(o.global_position) == cell:
+			return o
+	return null
 
 func building_at(cell: Vector2i) -> Node:
 	for b in buildings.get_children():

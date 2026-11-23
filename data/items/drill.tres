@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/buildings/drill.tscn" id="1_at81c"]
+[ext_resource type="Texture2D" path="res://art/icons/drill.png" id="2_xhc5w"]
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="3_1tq1x"]
+
+[resource]
+script = ExtResource("3_1tq1x")
+id = &"drill"
+name = "Drill"
+icon = ExtResource("2_xhc5w")
+description = "Place it next to a rock or iron rock. Mines it forever and feeds a furnace next to it."
+kind = 1
+max_stack = 10
+building = ExtResource("1_at81c")

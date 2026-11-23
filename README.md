@@ -3,7 +3,7 @@
 2D top-down sandbox about gathering, crafting and automation (see `Forager v2 (1).pdf` for the one-pager). This repo holds the first small prototype.
 
 ## What the prototype does
-Walk around a small island, swing toward the mouse to hit a skeleton dummy, chop trees and mine rocks. Wood and stone go into an inventory; craft a stone axe, pickaxe or sword from them in the crafting menu. A tool in the selected hotbar slot hits its own targets harder (axe: trees, pickaxe: rocks, sword: enemies). Craft a furnace, place it on the island, and smelt iron ore from the iron rocks into iron ingots, burning wood. Trees, rocks and iron rocks grow back over time.
+Walk around a small island, swing toward the mouse to hit a skeleton dummy, chop trees and mine rocks. Wood and stone go into an inventory; craft a stone axe, pickaxe or sword from them in the crafting menu. A tool in the selected hotbar slot hits its own targets harder (axe: trees, pickaxe: rocks, sword: enemies). Craft a furnace, place it on the island, and smelt iron ore from the iron rocks into iron ingots, burning wood. With 3 ingots, craft a drill: put it next to a rock or iron rock and it mines it forever, feeding a furnace next to it, so iron ingots come out with no hands (the automation chain from the one-pager). Trees, rocks and iron rocks grow back over time.
 
 | Input | Action |
 |---|---|
@@ -20,11 +20,11 @@ Walk around a small island, swing toward the mouse to hit a skeleton dummy, chop
 | Click a recipe, -/+ or type an amount, Craft | Queue it. Ingredients are taken right away, each item takes its craft time |
 | Click a queued item (bottom right) | Cancel it and get the ingredients back (refused, with "Inventory full!", if they would not fit) |
 | With a building (furnace) selected: left click | Place it on the highlighted cell (green = OK, red = blocked or too far) |
-| Left click next to a building | Open it (the furnace screen) instead of swinging |
-| In the furnace: drag or Shift + click | Move items in and out. Shift+click puts fuel and ore in the right slot by itself |
-| Pick up (furnace screen) | Get the furnace and everything in it back (refused if it doesn't all fit) |
+| Left click next to a machine | Open its screen (furnace, drill) instead of swinging |
+| In a machine screen: drag or Shift + click | Move items in and out. Shift+click puts fuel and ore in the right slot by itself |
+| Pick up (machine screen) | Get the machine and everything in it back (refused if it doesn't all fit) |
 
-The object a swing would hit gets a white outline. Trees, rocks and the skeleton take 3 hits by hand, 2 with the matching stone tool. A tree gives 3 wood, a rock 3 stone. Recipes you can't afford are dimmed, and the ingredient table shows the missing ones in red. If the inventory is full when a craft finishes, it waits in the queue until there is room. The player stands still while a menu is open. The furnace burns fuel only while it is smelting (wood lasts 8 s, 2 iron ore make 1 ingot in 4 s) and its screen says why it is idle. Iron rocks take 4 hits and give 2 iron ore. Every 6 s a new tree, rock or iron rock appears on a free cell, up to 14 on the island. New tools and buildings go to the hotbar, resources to the bag, and **Sort** only reorders the bag, so the hotbar stays the way you set it up.
+The object a swing would hit gets a white outline. Trees, rocks and the skeleton take 3 hits by hand, 2 with the matching stone tool. A tree gives 3 wood, a rock 3 stone. Recipes you can't afford are dimmed, and the ingredient table shows the missing ones in red. If the inventory is full when a craft finishes, it waits in the queue until there is room. The player stands still while a menu is open. The furnace burns fuel only while it is smelting (wood lasts 8 s, 2 iron ore make 1 ingot in 4 s) and its screen says why it is idle. Iron rocks take 4 hits and give 2 iron ore. A drill (3 iron ingots + 6 stone) mines 1 piece every 6 s from a rock or iron rock on a cell next to it (right, down, left, up) without using the rock up, and puts it into a machine next to it that takes it, otherwise into its own slot. Every 6 s a new tree, rock or iron rock appears on a free cell, up to 14 on the island. New tools and buildings go to the hotbar, resources to the bag, and **Sort** only reorders the bag, so the hotbar stays the way you set it up.
 
 ## Setup
 1. Install **Godot 4.7 or newer** (https://godotengine.org/download). The standard build is enough; the .NET/mono build is not needed, the game is pure GDScript.
@@ -40,13 +40,13 @@ Windows note: the project is set to Direct3D 12 (`project.godot`, `rendering_dev
 ## Project layout
 | Path | What |
 |---|---|
-| `scenes/` | `world` (the level), `player`, `tree`, `rock`, `iron_rock`, `skeleton`, `hud`; `buildings/furnace` |
+| `scenes/` | `world` (the level), `player`, `tree`, `rock`, `iron_rock`, `skeleton`, `hud`; `buildings/furnace`, `buildings/drill` |
 | `scripts/` | `world.gd` (island tiles), `player.gd` (move, attack, hover), `hittable.gd` (hits, drops), `hud.gd` (hotbar, pickup messages, opens the inventory), `player_data.gd` (autoload `PlayerData`: the player's inventory and hotbar selection), `crafting.gd` (autoload `Crafting`: recipe list, favorites, crafting queue), `placer.gd` (building placement and its ghost), `spawner.gd` (resources growing back), `highlight.gd` (the hover outline) |
-| `scripts/buildings/` | `Building` (base: open, pick up, contents) and `furnace.gd` (fuel, smelting) |
+| `scripts/buildings/` | `Building` (base: open, pick up, contents, what the machine screen shows), `furnace.gd` (fuel, smelting), `drill.gd` (mining, feeding machines next to it) |
 | `scripts/items/` | `ItemData`, `Recipe`, `RecipeBook` (resource types), `Inventory` and `ItemStack` (slot logic, reusable for chests and machines later) |
-| `scripts/ui/`, `scenes/ui/` | Slot, slot grid, inventory screen, crafting screen, crafting queue, furnace screen, and `theme.tres` (all UI colours and fonts) |
+| `scripts/ui/`, `scenes/ui/` | Slot, slot grid, inventory screen, crafting screen, crafting queue, machine screen (shared by all machines), and `theme.tres` (all UI colours and fonts) |
 | `data/items/`, `data/recipes/`, `data/recipe_book.tres` | One `.tres` per item and per recipe; the book lists which recipes the crafting menu shows |
-| `art/` | `icons/` 16x16 item icons, `buildings/` (furnace strip: off + 2 lit frames), `resources/` (iron rock). All of these are placeholders except the stone and sword icons, which come from the pack |
+| `art/` | `icons/` 16x16 item icons, `buildings/` (furnace and drill strips: off + 2 working frames), `resources/` (iron rock). All of these are placeholders except the stone and sword icons, which come from the pack |
 | `tests/` | Automated checks (see below) |
 | `shaders/outline.gdshader` | Hover highlight |
 | `tileset.tres` | Ground tiles with water collision, plus the scene tiles: 1 tree, 2 rock, 3 iron rock |
@@ -61,7 +61,7 @@ Open `scenes/world.tscn`. Paint **land** on the `Data` layer with any ground til
 Make a `StaticBody2D` scene with a sprite (origin at its base), a collision shape, and `scripts/hittable.gd`. Set `Hits`, `Drop` (an item from `data/items/`), `Drop Count` and `Weak To` (`axe`, `pickaxe` or `sword`) in the inspector. To let it grow back, add the scene to the tileset's scenes collection and give its tile id a weight in the `Spawner` node of `world.tscn` (`Weights`; `Interval` and `Max Resources` are there too).
 
 ## Adding a building
-1. Make a scene under `scenes/buildings/`: a `StaticBody2D` with a script that extends `Building` (`scripts/buildings/building.gd`), a sprite whose base sits on the node's origin, and a small collision shape at the base. It takes one grid cell. Override `interact()` if clicking it should do something; give it an `inventory` if it stores items (they come back with Pick up).
+1. Make a scene under `scenes/buildings/`: a `StaticBody2D` with a script that extends `Building` (`scripts/buildings/building.gd`), a sprite whose base sits on the node's origin, and a small collision shape at the base. It takes one grid cell. Give it an `inventory` if it stores items: clicking it then opens the machine screen, and its items come back with Pick up. Override `slot_labels()`, `progress()`, `status()`, `working_text()` and `info()` (and `fuel_slot()` / `fuel_left()` if it burns fuel) to fill that screen; see `furnace.gd` and `drill.gd`. Slot rules (`inventory.filters`) decide what goes where, also when another machine feeds it. Override `interact()` for something else on click.
 2. Make its item: kind **Building**, and set **Building** (under the Building group) to the scene.
 3. Add a recipe for it (category Buildings) and put it in the recipe book.
 
@@ -78,7 +78,7 @@ From the project folder (use your own path to the Godot console exe):
 ```
 Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/tests.tscn
 ```
-It prints `N/N checks passed`, or a `FAIL:` line per broken check, and the exit code is the number of failures. It covers the inventory rules (stacking, moving, splitting, sorting), the crafting queue (timing, cancel and refund, waiting when full) and a scripted play-through in the real world scene (chop, mine, use the crafting menu's categories, search and amount, queue an axe, drag it, select it, chop faster), the furnace (fuel, smelting, idle and full output, pick up) and a building play-through (mine iron, regrowth, craft and place a furnace with the invalid spots, open it, shift+click ore and wood in, smelt an ingot, pick it up). Without `--headless` and with `-- --shots=<folder>` added at the end, it also saves screenshots of the hotbar, the inventory, the crafting menu, a lit furnace and the furnace screen.
+It prints `N/N checks passed`, or a `FAIL:` line per broken check, and the exit code is the number of failures. It covers the inventory rules (stacking, moving, splitting, sorting), the crafting queue (timing, cancel and refund, waiting when full) and a scripted play-through in the real world scene (chop, mine, use the crafting menu's categories, search and amount, queue an axe, drag it, select it, chop faster), the furnace (fuel, smelting, idle and full output, pick up) a building play-through (mine iron, regrowth, craft and place a furnace with the invalid spots, open it, shift+click ore and wood in, smelt an ingot, pick it up) and the automation chain (craft a drill, place it next to an iron rock, ore stays in it, place a furnace next to it, ingots come out by themselves, the drill screen, the rock removed). Without `--headless` and with `-- --shots=<folder>` added at the end, it also saves screenshots of the hotbar, the inventory, the crafting menu, the island with machines, and the furnace and drill screens.
 
 ## Git
 Commit the `.uid` and `.import` files Godot generates (they keep resource references stable). Never commit `.godot/`.

@@ -2,7 +2,7 @@ extends Building
 ## Smelts what is in its input slot, using the recipes whose station is "furnace"
 ## (e.g. 2 Iron Ore -> 1 Iron Ingot). Burns fuel (items with fuel_time > 0) only while smelting;
 ## the part of a piece of fuel that is not used yet stays in the furnace.
-## Later, machines can feed it: anything added through `inventory.add()` lands in the right slot.
+## A drill next to it feeds it: anything added through `inventory.add()` lands in the right slot.
 
 const FUEL := 0
 const INPUT := 1
@@ -11,7 +11,7 @@ const STATION := "furnace"
 
 var burn_left := 0.0   # seconds of fuel left
 var burn_total := 0.0  # seconds the current piece of fuel lasts (for the bar)
-var progress := 0.0    # seconds into the current smelt
+var elapsed := 0.0     # seconds into the current smelt
 var recipe: Recipe     # what it is smelting right now, or null
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -23,9 +23,6 @@ func _init() -> void:
 		INPUT: func(it: ItemData) -> bool: return Crafting.recipe_using(it, STATION) != null,
 		OUTPUT: func(_it: ItemData) -> bool: return false,
 	}
-
-func interact() -> void:
-	PlayerData.open_machine(self)
 
 func is_lit() -> bool:
 	return sprite.animation == &"lit"
@@ -63,15 +60,15 @@ func _process(delta: float) -> void:
 	var r := ready_recipe()
 	if r != recipe:
 		recipe = r
-		progress = 0.0
+		elapsed = 0.0
 	if r == null or (burn_left <= 0.0 and not _refuel()):
 		_set_lit(false)
 		return
 	_set_lit(true)
 	burn_left -= delta
-	progress += delta
-	if progress >= r.craft_time:
-		progress -= r.craft_time
+	elapsed += delta
+	if elapsed >= r.craft_time:
+		elapsed -= r.craft_time
 		_smelt(r)
 
 func _refuel() -> bool:
@@ -95,3 +92,34 @@ func _smelt(r: Recipe) -> void:
 
 func _set_lit(on: bool) -> void:
 	sprite.play(&"lit" if on else &"off")
+
+# --- Machine screen ---
+
+func slot_labels() -> Array[String]:
+	return ["Fuel", "Smelt", "Output"]
+
+func progress() -> float:
+	return elapsed / recipe.craft_time if recipe else 0.0
+
+func fuel_slot() -> int:
+	return FUEL
+
+func fuel_left() -> float:
+	return clampf(burn_left / burn_total, 0.0, 1.0) if burn_total > 0.0 else 0.0
+
+func working_text() -> String:
+	return "Smelting %s..." % recipe.output.name if recipe else ""
+
+func info() -> String:
+	var smelts := []
+	var fuels := []
+	for r in Crafting.recipes():
+		if r.station == STATION:
+			for item: ItemData in r.inputs:
+				smelts.append("%d %s -> %d %s (%ss)" % [r.inputs[item], item.name, r.output_count, r.output.name, str(r.craft_time)])
+		for item: ItemData in r.inputs.keys() + [r.output]:
+			var line := "%s %ss" % [item.name, str(item.fuel_time)]
+			if item.fuel_time > 0.0 and not line in fuels:
+				fuels.append(line)
+	return "Smelts: %s
+Fuel: %s" % [", ".join(smelts), ", ".join(fuels)]

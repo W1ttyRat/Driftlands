@@ -1,0 +1,55 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/buildings/drill.gd" id="1_drill"]
+[ext_resource type="Texture2D" path="res://art/buildings/drill.png" id="2_strip"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_off"]
+atlas = ExtResource("2_strip")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_on1"]
+atlas = ExtResource("2_strip")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_on2"]
+atlas = ExtResource("2_strip")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_drill"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_off")
+}],
+"loop": true,
+"name": &"off",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_on1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_on2")
+}],
+"loop": true,
+"name": &"on",
+"speed": 8.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_drill"]
+size = Vector2(12, 7)
+
+[node name="Drill" type="StaticBody2D"]
+script = ExtResource("1_drill")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_drill")
+animation = &"off"
+autoplay = "off"
+centered = false
+offset = Vector2(-8, -16)
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_drill")

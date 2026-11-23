@@ -157,3 +157,24 @@ The base for the one-pager's automation chain ("a drill feeding a furnace that o
 ## Not in this step
 The drill and the automation chain itself, more furnace recipes, a second island, saving placed buildings.
 
+# Feature: the drill and the automation chain (branch `feature/drill`)
+
+## Goal
+The one-pager MVP item "one working automation chain, e.g. a drill feeding a furnace that outputs ingots".
+
+## What was built
+- **Drill** (`scripts/buildings/drill.gd`, Machines tab: 3 iron ingots + 6 stone, 6 s). Placed next to a rock or iron rock (any hittable weak to the pickaxe), it mines one of that rock's drop every 6 s and never uses the rock up, so rocks become deposits. Each piece goes into the first machine next to the drill that takes it (iron ore into a furnace's smelt slot, through its slot rules); otherwise it stays in the drill's one slot. It stops when the rock is gone or everything is full, and says why. Off/working sprite.
+- **The chain works by itself:** iron rock -> drill -> furnace (with wood) -> iron ingots. The player only refuels the furnace and collects ingots.
+- **Machine screen** (`scenes/ui/machine_screen.tscn`) replaces the furnace screen and serves every machine. `Building` has methods the screen asks for (`slot_labels`, `progress`, `fuel_slot`, `fuel_left`, `status`, `working_text`, `info`); machines override them. A building with an inventory opens it on click by default.
+- **Progress bar colours** moved into `theme.tres` (`ProgressBar`, and the `FuelBar` variation).
+- **Outline shader** rewritten to sample `TEXTURE` directly: passing it into a helper function made Godot log a `custom_samplers` shader compiler error once the machines were in. Looks the same.
+- **Tests**: 121 checks. New: the whole chain in the world scene, plus the drill screen and the drill losing its rock (which found and fixed a crash on a mined-away rock).
+
+## Decisions taken without asking (easy to change)
+- The drill mines forever without fuel; the furnace's wood is the running cost. Drill speed 1 piece / 6 s (export `mine_time` on the scene).
+- The drill pushes only into machines; it does not take ingots out of the furnace. There are no chests or belts yet.
+- Drill art and icon are generated placeholders.
+
+## Not in this step
+A chest or a way to move the furnace's ingots onward, the droid, a second island, saving.
+
