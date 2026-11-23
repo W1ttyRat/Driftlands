@@ -18,7 +18,7 @@ Walk around a small island, swing toward the mouse to hit a skeleton dummy, chop
 | Right click | Split a stack in half |
 | In crafting: categories, search | Filter the recipe grid (search looks through every category) |
 | Click a recipe, -/+ or type an amount, Craft | Queue it. Ingredients are taken right away, each item takes its craft time |
-| Click a queued item (bottom right) | Cancel it and get the ingredients back |
+| Click a queued item (bottom right) | Cancel it and get the ingredients back (refused, with "Inventory full!", if they would not fit) |
 
 The object a swing would hit gets a white outline. Trees, rocks and the skeleton take 3 hits by hand, 2 with the matching stone tool. A tree gives 3 wood, a rock 3 stone. Recipes you can't afford are dimmed, and the ingredient table shows the missing ones in red. If the inventory is full when a craft finishes, it waits in the queue until there is room. The player stands still while a menu is open. New tools go to the hotbar, resources to the bag, and **Sort** only reorders the bag, so the hotbar stays the way you set it up.
 

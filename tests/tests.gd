@@ -122,8 +122,8 @@ func test_crafting_queue() -> void:
 	check(PlayerData.inventory.count(AXE) == 0 and Crafting.queue[0].count == 2, "nothing arrives before the craft time")
 	Crafting._process(2.1)
 	check(PlayerData.inventory.count(AXE) == 1 and Crafting.queue[0].count == 1, "first axe arrives after 3 s")
-	Crafting.cancel(0)
-	check(Crafting.queue.is_empty() and PlayerData.inventory.count(WOOD) == 4 and PlayerData.inventory.count(STONE) == 3, "cancel refunds the axe not made yet")
+	check(is_equal_approx(Crafting.queue[0].time_left, 2.9), "the 0.1 s overshoot counts towards the next item")
+	check(Crafting.cancel(0) and Crafting.queue.is_empty() and PlayerData.inventory.count(WOOD) == 4 and PlayerData.inventory.count(STONE) == 3, "cancel refunds the axe not made yet")
 
 	# Full inventory: the job waits instead of losing the item.
 	Crafting.enqueue(AXE_RECIPE, 1)
@@ -136,8 +136,26 @@ func test_crafting_queue() -> void:
 	Crafting._process(3.1)
 	check(Crafting.queue.size() == 1 and Crafting.queue[0].waiting, "a finished craft waits while the inventory is full")
 	inv.slots[free_slot] = null
+	check(Crafting.queue[0].time_left == 0.0, "waiting time is not banked for the next item")
 	Crafting._process(0.0)
 	check(Crafting.queue.is_empty() and inv.count(AXE) == 2, "it lands as soon as there is room")
+
+	# Cancelling when the refund does not fit keeps the job instead of destroying the ingredients.
+	reset_player()
+	PlayerData.give(WOOD, 3)
+	PlayerData.give(STONE, 2)
+	Crafting.enqueue(AXE_RECIPE, 1)
+	var filled: Array[int] = []
+	for i in inv.size():
+		if inv.get_stack(i) == null:
+			inv.slots[i] = ItemStack.new(SWORD)
+			filled.append(i)
+	check(not Crafting.cancel(0) and Crafting.queue.size() == 1, "cancel is refused when the refund does not fit")
+	check(inv.count(WOOD) == 0 and inv.count(STONE) == 0 and inv.count(SWORD) == inv.size(), "a refused cancel leaves the inventory as it was")
+	inv.slots[filled[0]] = null
+	check(not Crafting.cancel(0) and inv.count(WOOD) == 0, "a refund that only partly fits is refused too")
+	inv.slots[filled[1]] = null
+	check(Crafting.cancel(0) and Crafting.queue.is_empty() and inv.count(WOOD) == 3 and inv.count(STONE) == 2, "cancel works once there is room")
 	reset_player()
 
 # --- In the real world scene -----------------------------------------------

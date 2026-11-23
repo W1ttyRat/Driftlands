@@ -2,7 +2,8 @@ extends Node
 ## Autoload "Crafting": the recipe list, favourites and the crafting queue.
 ## Queuing takes the ingredients straight away. Items are made one at a time, each taking the
 ## recipe's craft_time, and land in the inventory when done. Cancelling a job gives back the
-## ingredients for whatever was not made yet. If the inventory is full the job waits.
+## ingredients for whatever was not made yet, and is refused if they would not fit.
+## If the inventory is full when an item finishes, the job waits.
 
 signal queue_changed
 signal favorites_changed
@@ -40,15 +41,25 @@ func enqueue(recipe: Recipe, times := 1) -> bool:
 	queue_changed.emit()
 	return true
 
-func cancel(i: int) -> void:
+## Refunds the ingredients and drops the job. Returns false and keeps the job if the refund
+## would not all fit in the inventory, so nothing is ever thrown away.
+func cancel(i: int) -> bool:
 	if i < 0 or i >= queue.size():
-		return
+		return false
 	var job := queue[i]
-	queue.remove_at(i)
 	var costs := job.recipe.costs(job.count)
-	for item in costs:
-		PlayerData.give(item, costs[item])
+	var inv := PlayerData.inventory
+	var before := inv.snapshot()
+	for item: ItemData in costs:
+		if inv.add(item, costs[item], PlayerData.fill_order(item)) > 0:
+			inv.restore(before)
+			PlayerData.inventory_full.emit(item)
+			return false
+	queue.remove_at(i)
+	for item: ItemData in costs:
+		PlayerData.gained.emit(item, costs[item])
 	queue_changed.emit()
+	return true
 
 func _process(delta: float) -> void:
 	if queue.is_empty():
@@ -59,6 +70,7 @@ func _process(delta: float) -> void:
 		return
 	var r := job.recipe
 	if PlayerData.inventory.space_for(r.output, PlayerData.fill_order(r.output)) < r.output_count:
+		job.time_left = 0.0  # don't bank waiting time towards the next item
 		if not job.waiting:
 			job.waiting = true
 			PlayerData.inventory_full.emit(r.output)
@@ -67,7 +79,7 @@ func _process(delta: float) -> void:
 	job.waiting = false
 	PlayerData.give(r.output, r.output_count)
 	job.count -= 1
-	job.time_left = r.craft_time
+	job.time_left += r.craft_time  # keep the frame's overshoot so each item takes exactly craft_time
 	if job.count == 0:
 		queue.pop_front()
 	queue_changed.emit()
